@@ -1,4 +1,64 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref, onMounted, reactive } from "vue";
+0;
+import { ChatMessage, ChatSession } from "../../../typings";
+import dayjs from "dayjs";
+import MessageRow from "./components/MessageRow.vue";
+import MessageInput from "./components/MessageInput.vue";
+
+const activeSession = ref({ messages: [] } as ChatSession);
+
+onMounted(() => {});
+const responseMessage = ref({} as ChatMessage);
+
+const handleConnect = (message: string) => {
+  // const url = new URL("/chat", location.href);
+  // 可配置
+  const url = new URL("http://localhost:3000/chat", location.href);
+  url.searchParams.set("prompt", message);
+  const es = new EventSource(url);
+
+  // 等待响应
+  es.onmessage = (e) => {
+    // 服务端响应过来的参数
+    e.data;
+    if (e.data === "[DONE]") {
+      return es.close();
+    }
+    const data = JSON.parse(e.data);
+
+    if (data.choices[0].delta.content) {
+      const { content = "" } = data.choices[0].delta;
+      responseMessage.value.content += content;
+    }
+  };
+};
+
+const handleSendMessage = (message: string) => {
+  handleConnect(message);
+  // 新建一个ChatGPT回复对象，不能重复使用同一个对象
+  responseMessage.value = {
+    role: "assistant",
+    content: "",
+    // 回复的消息没有标识符，所以统一将创建时间+index作为key
+    createdAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+  } as ChatMessage;
+
+  // user消息
+  const chatMessage = {
+    session: Object.assign({}, activeSession.value),
+    content: message,
+    role: "user",
+    createdAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+  } as ChatMessage;
+
+  // 防止循环依赖，会导致json序列化失败
+  chatMessage.session.messages = [];
+
+  // 一组问答同时显示在页面
+  activeSession.value.messages.push(...[chatMessage, responseMessage.value]);
+};
+</script>
 
 <template>
   <div class="home-view">
@@ -7,7 +67,18 @@
         <div class="title">Magic NPC</div>
         <div class="description">Build your character</div>
       </div>
-      <div class="message-panel"></div>
+      <div class="message-panel">
+        <div class="message-list no-scrollbar">
+          <MessageRow
+            v-for="(message, index) in activeSession.messages"
+            :key="message.createdAt + index"
+            :message="message"
+          ></MessageRow>
+        </div>
+
+        <!-- 监听发送事件 -->
+        <message-input @send="handleSendMessage">消息输入框</message-input>
+      </div>
     </div>
   </div>
 </template>
@@ -50,20 +121,16 @@
 
       .session-list {
         .session {
-          /* 每个会话之间留一些间距 */
           margin-top: 20px;
         }
       }
 
       .button-wrapper {
-        /* session-panel是相对布局，这边的button-wrapper是相对它绝对布局 */
         position: absolute;
         bottom: 20px;
         left: 0;
         display: flex;
-        /* 让内部的按钮显示在右侧 */
         justify-content: flex-end;
-        /* 宽度和session-panel一样宽*/
         width: 100%;
 
         /* 按钮于右侧边界留一些距离 */
@@ -76,7 +143,8 @@
     /* 右侧消息记录面板*/
     .message-panel {
       width: 1000px;
-      height: 600px;
+      // height: 600px;
+      padding: 20px;
 
       .header {
         padding: 20px 20px 0 20px;
@@ -105,10 +173,10 @@
       }
 
       .message-list {
-        height: 700px;
+        height: 500px;
         padding: 15px;
         // 消息条数太多时，溢出部分滚动
-        overflow-y: scroll;
+        overflow-y: auto;
         // 当切换聊天会话时，消息记录也随之切换的过渡效果
         .list-enter-active,
         .list-leave-active {
@@ -120,6 +188,9 @@
           opacity: 0;
           transform: translateX(30px);
         }
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
       }
     }
   }

@@ -1,13 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
+    <title>Chat</title>
+    <!-- <h1>Chat</h1> -->
   </head>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <!-- <script>
+      function send(userMsg) {
+        const url = new URL("/chat", location.href);
+        url.searchParams.set("prompt", userMsg);
+        const es = new EventSource(url);
+
+        // 等待响应
+        es.onmessage = (e) => {
+          // 服务端相应过来的参数
+          e.data;
+          console.log(e.data);
+          if (e.data === "[DONE]") {
+            return es.close;
+          }
+        };
+      }
+      send("Hello");
+    </script> -->
   </body>
 </html>
