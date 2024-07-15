@@ -1,12 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive } from "vue";
+import { ref, onMounted, reactive, watch } from "vue";
 0;
 import { ChatMessage, ChatSession } from "../../../typings";
 import dayjs from "dayjs";
 import MessageRow from "./components/MessageRow.vue";
 import MessageInput from "./components/MessageInput.vue";
+import PromptShop from "./components/PromptShop.vue";
 
 const activeSession = ref({ messages: [] } as ChatSession);
+// const promptShow = ref<Boolean>(false);
+// const promptShow = ref(false);
+const dialogInfo = reactive({
+  isShow: false,
+});
+
+watch(
+  () => dialogInfo.isShow,
+  (val) => {
+    console.log("父组件监听flag:", val);
+  }
+);
+//  接收子组件传过来的事件
+const changeVi = (val: any) => {
+  console.log(val);
+  dialogInfo.isShow = false;
+};
+
+const getPrompts = (promptList: Object) => {
+  console.log(promptList);
+};
 
 onMounted(() => {});
 const responseMessage = ref({} as ChatMessage);
@@ -58,6 +80,11 @@ const handleSendMessage = (message: string) => {
   // 一组问答同时显示在页面
   activeSession.value.messages.push(...[chatMessage, responseMessage.value]);
 };
+
+const handlePromptBtn = () => {
+  console.log("btn click");
+  dialogInfo.isShow = true;
+};
 </script>
 
 <template>
@@ -66,6 +93,9 @@ const handleSendMessage = (message: string) => {
       <div class="session-panel">
         <div class="title">Magic NPC</div>
         <div class="description">Build your character</div>
+        <el-button class="prompt-btn" @click="handlePromptBtn"
+          >Prompt Shop</el-button
+        >
       </div>
       <div class="message-panel">
         <div class="message-list no-scrollbar">
@@ -81,6 +111,11 @@ const handleSendMessage = (message: string) => {
       </div>
     </div>
   </div>
+  <PromptShop
+    :dialogVisible="dialogInfo.isShow"
+    @changeVi="changeVi"
+    @submit="getPrompts"
+  ></PromptShop>
 </template>
 
 <style lang="scss" scoped>
@@ -117,6 +152,11 @@ const handleSendMessage = (message: string) => {
         color: #ffffff;
         font-size: 14px;
         margin-top: 10px;
+      }
+
+      .prompt-btn {
+        margin-top: 580px;
+        width: 300px;
       }
 
       .session-list {
