@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import { ref, reactive, defineProps, onMounted, watch } from "vue";
+import usePromptInfoStore from "@/stores/prompt"; //引入仓库
+import { storeToRefs } from "pinia"; //引入pinia转换
+const promptInfo = usePromptInfoStore();
 
-// 发送消息消息事件
-// const emit = defineEmits<{
-//   send: [promptForm: Object];
-//   confirm: [promptShow: Boolean];
-// }>();
+const { promptListStore } = storeToRefs(promptInfo); // 响应式
 
 // props 接收父组件参数
 const props = defineProps({
@@ -38,7 +37,7 @@ const promptForm = reactive({
   desc: "",
 });
 
-const promptList: Object[] = reactive([]);
+let promptList: Object[] = reactive([]);
 const submitPrompt = () => {
   let promptData = { name: "", desc: "" };
   promptData.name = promptForm.name;
@@ -51,9 +50,9 @@ const submitPrompt = () => {
   //   emit("changeVi", false);
 };
 
-// const promptList: Object[] = [];
-
-onMounted(() => {});
+onMounted(() => {
+  promptList = promptListStore.value;
+});
 </script>
 <template>
   <div class="prompt-form">

@@ -6,6 +6,9 @@ import dayjs from "dayjs";
 import MessageRow from "./components/MessageRow.vue";
 import MessageInput from "./components/MessageInput.vue";
 import PromptShop from "./components/PromptShop.vue";
+import usePromptInfoStore from "@/stores/prompt"; //引入仓库
+import { storeToRefs } from "pinia"; //引入pinia转换
+const promptInfo = usePromptInfoStore();
 
 const activeSession = ref({ messages: [] } as ChatSession);
 // const promptShow = ref<Boolean>(false);
@@ -26,8 +29,12 @@ const changeVi = (val: any) => {
   dialogInfo.isShow = false;
 };
 
-const getPrompts = (promptList: Object) => {
+const { promptListStore } = storeToRefs(promptInfo); // 响应式
+
+const getPrompts = (promptList: any) => {
   console.log(promptList);
+  promptListStore.value = promptList;
+  console.log(promptListStore.value);
 };
 
 onMounted(() => {});
