@@ -51,15 +51,16 @@ const handleConnect = (message: string) => {
   es.onmessage = (e) => {
     // 服务端响应过来的参数
     e.data;
+    console.log(e.data)
     if (e.data === "[DONE]") {
       return es.close();
     }
-    const data = JSON.parse(e.data);
+    // const data = JSON.parse(e.data);
 
-    if (data.choices[0].delta.content) {
-      const { content = "" } = data.choices[0].delta;
-      responseMessage.value.content += content;
-    }
+    // if (data.choices[0].delta.content) {
+      // const { content = "" } = data.choices[0].delta;
+      responseMessage.value.content += e.data;
+    // }
   };
 };
 
