@@ -2,6 +2,9 @@
 import { ref, reactive, defineProps, onMounted, watch } from "vue";
 import usePromptInfoStore from "@/stores/prompt"; //引入仓库
 import { storeToRefs } from "pinia"; //引入pinia转换
+import { ElMessage, ElMessageBox } from "element-plus";
+
+import type { UploadProps, UploadUserFile } from "element-plus";
 const promptInfo = usePromptInfoStore();
 
 const { promptListStore } = storeToRefs(promptInfo); // 响应式
@@ -11,7 +14,7 @@ const props = defineProps({
   dialogVisible: Boolean,
 });
 const dialogIsShow = ref(false);
-const innerDialogIsShow = ref(false);
+// const innerDialogIsShow = ref(false);
 
 // 监听状态改变
 watch(
@@ -24,11 +27,11 @@ watch(
 // 弹窗关闭的时候 传状态给父组件
 const emit = defineEmits<{
   changeVi: [dialogIsShow: boolean];
-  submit: [promptList: Object];
+  submit: [promptForm: Object];
 }>();
 
 const closeDialog = () => {
-  emit("submit", promptList);
+  // emit("submit", promptForm);
   emit("changeVi", false);
 };
 
@@ -37,21 +40,51 @@ const promptForm = reactive({
   desc: "",
 });
 
-let promptList: Object[] = reactive([]);
+// let promptList: Object[] = reactive([]);
 const submitPrompt = () => {
-  let promptData = { name: "", desc: "" };
-  promptData.name = promptForm.name;
-  promptData.desc = promptForm.desc;
-  promptList.push(promptData);
-  promptForm.name = "";
-  promptForm.desc = "";
-  innerDialogIsShow.value = false;
-  //   emit("submit", promptForm);
-  //   emit("changeVi", false);
+  emit("submit", promptForm);
+  emit("changeVi", false);
+};
+
+const fileList = ref<UploadUserFile[]>([
+  {
+    name: "Harry Potter.txt",
+    url: "https://element-plus.org/images/element-plus-logo.svg",
+  },
+  // {
+  //   name: "element-plus-logo2.svg",
+  //   url: "https://element-plus.org/images/element-plus-logo.svg",
+  // },
+]);
+
+const handleRemove: UploadProps["onRemove"] = (file, uploadFiles) => {
+  console.log(file, uploadFiles);
+};
+
+const handlePreview: UploadProps["onPreview"] = (uploadFile) => {
+  console.log(uploadFile);
+};
+
+const handleExceed: UploadProps["onExceed"] = (files, uploadFiles) => {
+  ElMessage.warning(
+    `The limit is 3, you selected ${files.length} files this time, add up to ${
+      files.length + uploadFiles.length
+    } totally`
+  );
+};
+
+const beforeRemove: UploadProps["beforeRemove"] = (uploadFile, uploadFiles) => {
+  return ElMessageBox.confirm(
+    `Cancel the transfer of ${uploadFile.name} ?`
+  ).then(
+    () => true,
+    () => false
+  );
 };
 
 onMounted(() => {
-  promptList = promptListStore.value;
+  promptForm.name = "";
+  promptForm.desc = "";
 });
 </script>
 <template>
@@ -60,53 +93,50 @@ onMounted(() => {
       <!-- 外层dialog -->
       <el-dialog
         :model-value="props.dialogVisible"
-        title="Prompt List"
+        title="Add Prompt"
         width="700"
         @close="closeDialog"
       >
-        <el-table :data="promptList">
-          <el-table-column property="name" label="Name" width="150" />
-          <el-table-column property="desc" label="Description" width="500" />
-        </el-table>
-        <!-- 内层 -->
-        <el-dialog
-          :model-value="innerDialogIsShow"
-          title="Add Prompt"
-          width="500"
+        <el-form
+          :model="promptForm"
+          label-width="auto"
+          style="max-width: 600px"
         >
-          <el-form
-            :model="promptForm"
-            label-width="auto"
-            style="max-width: 600px"
-          >
-            <el-form-item label="Character Name">
-              <el-input v-model="promptForm.name" />
-            </el-form-item>
-            <el-form-item label="Character Description">
-              <el-input type="textarea" rows="10" v-model="promptForm.desc" />
-            </el-form-item> </el-form
-          ><template #footer>
-            <div class="dialog-footer">
-              <el-button @click="innerDialogIsShow = false">Cancel</el-button>
-              <el-button type="primary" @click="submitPrompt">
-                Submit
-              </el-button>
+          <el-form-item label="Character Name">
+            <el-input v-model="promptForm.name" />
+          </el-form-item>
+          <el-form-item label="Character Description">
+            <el-input type="textarea" rows="10" v-model="promptForm.desc" />
+          </el-form-item>
+        </el-form>
+        <el-upload
+          v-model:file-list="fileList"
+          class="upload-demo"
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+          multiple
+          :on-preview="handlePreview"
+          :on-remove="handleRemove"
+          :before-remove="beforeRemove"
+          :limit="3"
+          :on-exceed="handleExceed"
+        >
+          <el-button type="primary">Click to upload</el-button>
+          <template #tip>
+            <div class="el-upload__tip">
+              File search enables the assistant with knowledge from files that
+              you or your users upload. Once a file is uploaded, the assistant
+              automatically decides when to retrieve content based on user
+              requests.
             </div>
-          </template></el-dialog
-        >
-
+          </template>
+        </el-upload>
         <template #footer>
           <div class="dialog-footer">
             <el-button @click="closeDialog">Cancel</el-button>
-            <!-- <el-button type="primary" @click="submitPrompt">
-              Confirm
-            </el-button> -->
-            <el-button type="primary" @click="innerDialogIsShow = true">
-              Add Prompt
-            </el-button>
+            <el-button type="primary" @click="submitPrompt"> Submit </el-button>
           </div>
-        </template>
-      </el-dialog>
+        </template></el-dialog
+      >
     </div>
   </div>
 </template>

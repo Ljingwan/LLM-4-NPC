@@ -9,7 +9,7 @@
 //   console.log("http://localhost:3000");
 // });
 
-import { createServer, IncomingMessage, ServerResponse } from "http";
+import { createServer, ServerResponse } from "http";
 import axios from "axios";
 import "dotenv/config";
 import { createReadStream } from "fs";
@@ -23,24 +23,92 @@ const gptApi = axios.create({
   },
 });
 
-async function promptGPT(prompt: string, npc: string, res: ServerResponse) {
+// openAi Api 上传文件
+async function uploadFile(filePath: string) {
+  const fs = require("fs");
+  const fileStream = fs.createReadStream(filePath);
+
+  const response = await openai.files.create({
+    file: fileStream,
+    // Specify 'assistants' to use this file for an AI assistant
+    purpose: "assistants",
+  });
+
+  console.log("Uploaded file ID:", response.id);
+  return response.id;
+}
+
+const fileIds = uploadFile("./assets/Harry potter.txt");
+
+// 管理文件
+async function listFiles() {
+  const response = await openai.files.list();
+  console.log(response.data);
+}
+
+listFiles();
+
+// 向量化存储
+async function createVectorStore() {
+  const response = await openai.beta.vectorStores.create({
+    name: "My Knowledge Base",
+    //description: "A store of documents for the assistant to use.",
+  });
+
+  console.log("Vector Store ID:", response.id);
+  return response.id;
+}
+
+// 将文件添加到矢量存储
+async function addFilesToVectorStore(vectorStoreId: string, fileIds: any) {
+  await openai.beta.vectorStores.fileBatches.createAndPoll(vectorStoreId, {
+    file_ids: fileIds,
+  });
+
+  console.log("Files added to Vector Store:", vectorStoreId);
+}
+
+async function addFile() {
+  const fileIds = await uploadFile("./assets/Harry potter.txt");
+  const vectorStoreId = await createVectorStore();
+  addFilesToVectorStore(vectorStoreId, [fileIds]);
+}
+addFile();
+
+// 通过assistant使用文件
+async function promptGPT(
+  prompt: string,
+  npc: string,
+  desc: string,
+  res: ServerResponse,
+  vectorStoreId: string
+) {
+  const ASSISTANT_NAME = "test npc";
+  //const ASSISTANT_NAME = npc;
+  // let assistant = null;
+  // let assistants = await openai.beta.assistants.list();
+  // console.log(assistants)
+  // let assistant = assistants.data.find(
+  //   (assistant) => assistant.name == ASSISTANT_NAME
+  // );
   try {
     // assistant ID
-    // const assistant = await openai.beta.assistants.create({
-    //   model: "gpt-4o-mini",
-    //   name: "Harry Potter",
-    //   instructions:
-    //     "You are now embodying the character of Harry Potter.",
-    // });
-    let assistantId = "";
-    if (npc === "Harry Potter") {
-      assistantId = "asst_QL1dV69L7D8ASrFo4BuZ7ra2";
-    } else if (npc === "Albus Dumbledore") {
-      assistantId = "asst_vjzVM1kH6qZYgBZu5neq5EL4";
-    } else if (npc === "Lord Voldemort") {
-      assistantId = "asst_f6Kx8xHe5EY4CGfV97zIUwef";
-    }
-    console.log("Created Assistant with Id: " + assistantId);
+    const assistant = await openai.beta.assistants.create({
+      model: "gpt-4o-mini",
+      name: npc,
+      // name: ASSISTANT_NAME,
+      instructions: desc,
+      tools: [{ type: "file_search" }],
+      tool_resources: {
+        file_search: {
+          // Attach vector store containing the files
+          vector_store_ids: [vectorStoreId],
+        },
+      },
+    });
+    let assistantId = assistant.id;
+
+    console.log("Created Assistant with Id: " + assistantId + npc + prompt);
 
     const thread = await openai.beta.threads.create({
       messages: [
@@ -54,7 +122,7 @@ async function promptGPT(prompt: string, npc: string, res: ServerResponse) {
     console.log("Created thread with Id: " + threadId);
 
     const run = openai.beta.threads.runs.createAndStream(threadId, {
-      assistant_id: assistantId,
+      assistant_id: assistant.id,
       stream: true,
     });
 
@@ -111,7 +179,8 @@ createServer(async (req, res) => {
           })
         );
       }
-      await promptGPT(query.prompt, query.npc, res);
+      const vectorStoreId = await createVectorStore();
+      await promptGPT(query.prompt, query.npc, query.desc, res, vectorStoreId);
       break;
     default:
       res.end("");

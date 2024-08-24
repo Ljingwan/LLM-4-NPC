@@ -37,10 +37,8 @@ const changeVi = (val: any) => {
 
 const { promptListStore } = storeToRefs(promptInfo); // 响应式
 
-const getPrompts = (promptList: any) => {
-  console.log(promptList);
-  promptListStore.value = promptList;
-  console.log(promptListStore.value);
+const getPrompts = (character: any) => {
+  npcList.push(character);
 };
 
 onMounted(() => {});
@@ -51,18 +49,26 @@ const responseMessage = ref({} as ChatMessage);
 //   activeSession.value = session;
 // };
 
-let npcName = ref("");
-const handleChatChange = (name: string) => {
-  npcName.value = name;
+// let npcName = ref("");
+let npcInfo = { name: "", desc: "" };
+let npcList = [
+  { name: "Harry Potter", desc: "" },
+  { name: "Albus Dumbledore", desc: "" },
+  { name: "Lord Voldemort", desc: "" },
+];
+const handleChatChange = (name: string, desc: string) => {
+  npcInfo.name = name;
+  npcInfo.desc = desc;
   activeSession.value.messages = [];
 };
 
-const handleConnect = (message: string, npcName: string) => {
+const handleConnect = (message: string, npcName: string, npcDesc: string) => {
   // const url = new URL("/chat", location.href);
   // 可配置
   const url = new URL("http://localhost:3000/chat", location.href);
   url.searchParams.set("prompt", message);
   url.searchParams.set("npc", npcName);
+  url.searchParams.set("desc", npcDesc);
   const es = new EventSource(url);
 
   // 等待响应
@@ -83,7 +89,7 @@ const handleConnect = (message: string, npcName: string) => {
 };
 
 const handleSendMessage = (message: string) => {
-  handleConnect(message, npcName.value);
+  handleConnect(message, npcInfo.name, npcInfo.desc);
   // 新建一个ChatGPT回复对象，不能重复使用同一个对象
   responseMessage.value = {
     role: "assistant",
@@ -96,9 +102,9 @@ const handleSendMessage = (message: string) => {
   const chatMessage = {
     session: Object.assign(
       {},
-      npcName.value === "Harry Potter"
+      npcInfo.name === "Harry Potter"
         ? activeSessionH.value
-        : npcName.value === "Albus Dumbledore"
+        : npcInfo.name === "Albus Dumbledore"
         ? activeSessionD.value
         : activeSessionV.value
     ),
@@ -111,9 +117,9 @@ const handleSendMessage = (message: string) => {
   chatMessage.session.messages = [];
 
   // 一组问答同时显示在页面
-  (npcName.value === "Harry Potter"
+  (npcInfo.name === "Harry Potter"
     ? activeSessionH.value
-    : npcName.value === "Albus Dumbledore"
+    : npcInfo.name === "Albus Dumbledore"
     ? activeSessionD.value
     : activeSessionV.value
   ).messages.push(...[chatMessage, responseMessage.value]);
@@ -121,16 +127,17 @@ const handleSendMessage = (message: string) => {
 
   //
   activeSession.value =
-    npcName.value === "Harry Potter"
+    npcInfo.name === "Harry Potter"
       ? activeSessionH.value
-      : npcName.value === "Albus Dumbledore"
+      : npcInfo.name === "Albus Dumbledore"
       ? activeSessionD.value
       : activeSessionV.value;
 };
 
 // 人物prompt修改
 const handleNpcEdit = (name: string) => {
-  console.log('edit----------' + name);
+  console.log("edit----------" + name);
+  // handlePromptBtn();
 };
 
 const handlePromptBtn = () => {
@@ -144,32 +151,23 @@ const handlePromptBtn = () => {
     <div class="chat-panel">
       <div class="session-panel">
         <div class="title">Magic NPC</div>
-        <div class="description">Build your character</div>
+        <div class="description">
+          <span class="sub-title">Build your character</span>
+        </div>
         <div class="session-list">
-          <div class="session-item" @click="handleChatChange('Harry Potter')">
-            <div class="name">Harry Potter</div>
-            <Edit class="edit" @click.stop="handleNpcEdit('Harry Potter')" />
-            <div class="mask"></div>
-          </div>
           <div
             class="session-item"
-            @click="handleChatChange('Albus Dumbledore')"
+            v-for="item in npcList"
+            :key="item.name"
+            @click="handleChatChange(item.name, item.desc)"
           >
-            <div class="name">Albus Dumbledore</div>
-            <Edit
-              class="edit"
-              @click.stop="handleNpcEdit('Albus Dumbledore')"
-            />
+            <div class="name">{{ item.name }}</div>
             <div class="mask"></div>
-          </div>
-          <div class="session-item" @click="handleChatChange('Lord Voldemort')">
-            <div class="name">Lord Voldemort</div>
-            <Edit class="edit" @click.stop="handleNpcEdit('Lord Voldemort')" />
-            <div class="mask"></div>
+            <div></div>
           </div>
         </div>
         <el-button class="prompt-btn" @click="handlePromptBtn"
-          >Prompt Shop</el-button
+          >Create New Character</el-button
         >
       </div>
       <div class="message-panel">
@@ -367,6 +365,7 @@ const handlePromptBtn = () => {
           .description {
             margin-top: 10px;
             color: rgba(black, 0.5);
+            display: flex;
           }
         }
 
