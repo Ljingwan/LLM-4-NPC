@@ -84,13 +84,6 @@ async function promptGPT(
   vectorStoreId: string
 ) {
   const ASSISTANT_NAME = "test npc";
-  //const ASSISTANT_NAME = npc;
-  // let assistant = null;
-  // let assistants = await openai.beta.assistants.list();
-  // console.log(assistants)
-  // let assistant = assistants.data.find(
-  //   (assistant) => assistant.name == ASSISTANT_NAME
-  // );
   try {
     // assistant ID
     const assistant = await openai.beta.assistants.create({

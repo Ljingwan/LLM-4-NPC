@@ -19,7 +19,14 @@ const sendMessage = () => {
 const { promptListStore } = storeToRefs(promptInfo); // 响应式
 
 const promptVal = ref("");
-const optionsArr = promptListStore;
+// const optionsArr = promptListStore;
+let optionsArr = [
+  { name: "Mathematical ability", desc: "xxx" },
+  {
+    name: "Potions knowledge",
+    desc: "As a Potions student or practitioner, you must be well-versed in the properties of various magical plants, creatures, and minerals. Some key ingredients include items like bezoars, which can counteract poisons; asphodel, used in powerful sleep-inducing potions; and unicorn hair, which can enhance the potency of certain mixtures. You’ll also need a deep understanding of magical herbs such as wolfsbane and dittany, and creatures like lacewing flies, powdered dragon scales, and phoenix feathers.",
+  },
+];
 
 const handlePromptChanged = (prompt: string) => {
   message.value = prompt;

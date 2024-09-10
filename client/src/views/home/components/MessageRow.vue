@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, PropType } from "vue";
+import { onMounted, PropType, ref } from "vue";
 import { ChatMessage } from "../../../../typings";
 
 // message：接受消息对象，展示消息内容和头像，并且根据角色调整消息位置
@@ -8,6 +8,7 @@ const props = defineProps({
   message: { type: Object as PropType<ChatMessage>, required: true },
   // avatar: { type: String, default: "https://www.jarcheng.top/images/logo.jpg" },
 });
+const rateVal = ref(0);
 
 onMounted(() => {
   console.log(props.message);
@@ -44,6 +45,9 @@ onMounted(() => {
         </div>
         <!-- 消息的内容空显示加载动画 -->
         <!-- <TextLoading v-else></TextLoading> -->
+      </div>
+      <div v-if="message.role !== 'user'" class="demo-rate-block">
+        <el-rate v-model="rateVal" />
       </div>
     </div>
   </div>

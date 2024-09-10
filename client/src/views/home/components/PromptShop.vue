@@ -40,7 +40,7 @@ const promptForm = reactive({
   desc: "",
 });
 
-// let promptList: Object[] = reactive([]);
+// let promptList: Object[    ] = reactive([]);
 const submitPrompt = () => {
   emit("submit", promptForm);
   emit("changeVi", false);
@@ -49,12 +49,8 @@ const submitPrompt = () => {
 const fileList = ref<UploadUserFile[]>([
   {
     name: "Harry Potter.txt",
-    url: "https://element-plus.org/images/element-plus-logo.svg",
+    url: "",
   },
-  // {
-  //   name: "element-plus-logo2.svg",
-  //   url: "https://element-plus.org/images/element-plus-logo.svg",
-  // },
 ]);
 
 const handleRemove: UploadProps["onRemove"] = (file, uploadFiles) => {
